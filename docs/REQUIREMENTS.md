@@ -37,7 +37,7 @@ Porch is an invite-only lending library. Members vouch for new members via invit
 ### SETUP-01: Local development environment
 - [ ] `docker compose up` starts PostgreSQL
 - [ ] `api/` is a NestJS app; `web/` is a Vite React TS app
-- [ ] ESLint + Prettier configured in both; a single command formats the repo
+- [ ] A linter (oxlint in `api/`, ESLint in `web/`) and Prettier configured in both; a single command formats the repo
 - [ ] `GET /health` returns `200 { status: "ok" }` and checks the database connection
 - [ ] The web app's home page calls `/health` and displays the result
 
