@@ -1,0 +1,57 @@
+model User {
+  id               Int               @id @default(autoincrement())
+  email            String            @unique
+  passwordHash     String
+  displayName      String
+  bio              String?
+  userVerification UserVerification?
+
+  inviteCodeId Int?
+
+  inviteCodes UserInviteCode[] @relation("CodeOwner")
+  inviteCode  UserInviteCode?  @relation("CodeUsage", fields: [inviteCodeId], references: [id], onDelete: SetNull)
+
+  inviteLimit Int  @default(3)
+  invitedById Int?
+
+  invitedBy User? @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  invitees User[] @relation("UserInvites")
+
+  @@index([inviteCodeId])
+  @@index([invitedById])
+}
+
+model UserVerification {
+  id     Int @id @default(autoincrement())
+  userId Int @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tokenHash String @unique
+
+  expiresAt  DateTime  @db.Timestamptz(3)
+  verifiedAt DateTime? @db.Timestamptz(3)
+
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+}
+
+model UserInviteCode {
+  id   Int    @id @default(autoincrement())
+  code String @unique @db.Char(8)
+
+  userId Int
+  user   User @relation("CodeOwner", fields: [userId], references: [id], onDelete: Cascade)
+
+  revokedAt DateTime? @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime  @updatedAt @db.Timestamptz(3)
+
+  usedBy User[] @relation("CodeUsage")
+
+  @@index([userId])
+}
