@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { configureApp } from '../src/app.setup';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+
 
 describe('HealthController (e2e)', () => {
   let app: INestApplication<App>;
@@ -13,6 +15,7 @@ describe('HealthController (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
+    configureApp(app);
     await app.init();
   });
 
