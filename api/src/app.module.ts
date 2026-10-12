@@ -3,6 +3,9 @@ import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
 import { HealthController } from './health/health.controller';
 import { HealthService } from './health/health.service';
+import { AuthenticationController } from './authentication/authentication.controller';
+import { AuthenticationService } from './authentication/authentication.service';
+import { PrismaService } from './prisma/prisma.service';
 
 @Module({
   imports: [
@@ -15,7 +18,7 @@ import { HealthService } from './health/health.service';
       }),
     }),
   ],
-  controllers: [HealthController],
-  providers: [HealthService],
+  controllers: [HealthController, AuthenticationController],
+  providers: [HealthService, AuthenticationService, PrismaService],
 })
 export class AppModule {}
