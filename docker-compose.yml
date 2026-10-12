@@ -1,0 +1,25 @@
+# Local development infrastructure. Not used in production (see infra/ for AWS).
+services:
+  postgres:
+    image: postgres:18-alpine
+    container_name: porch-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: porch
+      POSTGRES_PASSWORD: porch
+      POSTGRES_DB: porch
+    ports:
+      # Override with POSTGRES_PORT if 5432 is already taken on your machine
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      # Runs only when the data volume is first created
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U porch -d porch"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  postgres-data:
