@@ -155,14 +155,30 @@ describe('AuthenticationController (e2e)', () => {
 
   it('/auth/login - Post - Success - Uppercase email', async () => {
     const dto: LoginUserDto = {
-      email: FOUNDER_EMAIL,
-      password: 'fakepassword',
+      email: FOUNDER_EMAIL.toUpperCase(),
+      password: FOUNDER_PASSWORD_RAW,
     };
 
     return request(app.getHttpServer())
       .post('/v1/auth/login')
       .send(dto)
-      .expect(401);
+      .expect(200)
+      .expect((res) => {
+        expect(typeof res.body.accessToken).toBe('string');
+
+        const cookies = res.headers['set-cookie'] as unknown as
+          string[] | undefined;
+
+        const authCookie = cookies?.find((c) => c.startsWith('access_token='));
+
+        expect(authCookie).toBeDefined();
+        expect(authCookie).toContain('HttpOnly');
+        expect(authCookie).toContain('SameSite=Lax');
+        expect(authCookie).not.toContain('Secure');
+
+        const cookieValue = authCookie!.split(';')[0].split('=')[1];
+        expect(cookieValue).toBe(res.body.accessToken);
+      });
   });
 
   it('/auth/login - Post - Fail - Valid, but wrong email', async () => {
