@@ -5,7 +5,9 @@ import {
   FOUNDER_INVITE_CODE,
   FOUNDER_INVITE_LIMIT,
   FOUNDER_VERFIFY_EXP_DATE,
-  FOUNDER_VERFIFY_AT_DATE
+  FOUNDER_VERFIFY_AT_DATE,
+  FOUNDER_PASSWORD_RAW,
+  FOUNDER_PASSWORD_HASH,
 } from './constants';
 
 type UserOverrides = {
@@ -28,20 +30,19 @@ export async function createUser(
 ) {
   const {
     email = overrides.email ?? FOUNDER_EMAIL,
-    displayName = overrides.displayName?? FOUNDER_DISPLAY_NAME,
-    inviteCode = overrides.inviteCode?? FOUNDER_INVITE_CODE,
-    inviteLimit,
-    invitesUsed,
-    expiresAt,
-    verifiedAt,
+    displayName = overrides.displayName ?? FOUNDER_DISPLAY_NAME,
+    inviteCode = overrides.inviteCode ?? FOUNDER_INVITE_CODE,
+    inviteLimit = overrides.inviteLimit,
+    invitesUsed = overrides.invitesUsed,
+    expiresAt = overrides.expiresAt,
+    verifiedAt = overrides.verifiedAt,
   } = overrides;
 
   return prisma.user.create({
     data: {
       email,
       displayName,
-      // TODO: replace with a real bcrypt hash once tests log in as the founder.
-      passwordHash: 'not-used-in-these-tests',
+      passwordHash: FOUNDER_PASSWORD_HASH,
       inviteLimit,
       invitesUsed,
       userVerification: {
@@ -56,6 +57,17 @@ export async function createUser(
     include: { inviteCodes: true },
   });
 }
-export async function createFounder(prisma: PrismaService) {
-  return await createUser(prisma);
+export async function createFounder(
+  prisma: PrismaService,
+  overrides: UserOverrides = {
+    email: FOUNDER_EMAIL,
+    displayName: FOUNDER_DISPLAY_NAME,
+    inviteCode: FOUNDER_INVITE_CODE,
+    inviteLimit: FOUNDER_INVITE_LIMIT,
+    invitesUsed: 0,
+    expiresAt: FOUNDER_VERFIFY_EXP_DATE,
+    verifiedAt: FOUNDER_VERFIFY_AT_DATE,
+  },
+) {
+  return await createUser(prisma, overrides);
 }

@@ -12,7 +12,10 @@ import {
   FOUNDER_EMAIL,
   FOUNDER_DISPLAY_NAME,
   FOUNDER_INVITE_CODE,
+  FOUNDER_PASSWORD_HASH,
+  FOUNDER_PASSWORD_RAW,
 } from '../fixtures/constants';
+import { LoginUserDto } from '../../src/authentication/dto/user/login-user.dto';
 
 describe('AuthenticationController (e2e)', () => {
   let app: INestApplication<App>;
@@ -98,6 +101,69 @@ describe('AuthenticationController (e2e)', () => {
         expect(res.body).toMatchObject({
           message: 'Invalid invite code',
         }),
+      );
+  });
+
+  it('/auth/login - Post - Success', () => {
+    const dto: LoginUserDto = {
+      email: FOUNDER_EMAIL,
+      password: FOUNDER_PASSWORD_RAW,
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(201);
+  });
+
+  it('/auth/login - Post - Fail - Wrong pw', () => {
+    const dto: LoginUserDto = {
+      email: FOUNDER_EMAIL,
+      password: 'fakepasswordthatfails',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(401);
+  });
+
+  it('/auth/login - Post - Success - Uppercase email', () => {
+    const dto: LoginUserDto = {
+      email: FOUNDER_EMAIL,
+      password: 'fakepassword',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(401);
+  });
+
+  it('/auth/login - Post - Fail - Valid, but wrong email', () => {
+    const dto: LoginUserDto = {
+      email: 'fakeemail@thatfa.ils',
+      password: 'fakepasswordthatfails',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(401);
+  });
+
+  it('/auth/login - Post - Fail - Invalid email input', () => {
+    const dto: LoginUserDto = {
+      email: 'fakeemailthatfails',
+      password: 'fakepasswordthatfails',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(400)
+      .expect((res) =>
+        expect(res.body.message).toContain('Please enter a valid email address'),
       );
   });
 
