@@ -119,7 +119,23 @@ describe('AuthenticationController (e2e)', () => {
     return request(app.getHttpServer())
       .post('/v1/auth/login')
       .send(dto)
-      .expect(201);
+      .expect(200)
+      .expect((res) => {
+        expect(typeof res.body.accessToken).toBe('string');
+
+        const cookies = res.headers['set-cookie'] as unknown as
+          string[] | undefined;
+
+        const authCookie = cookies?.find((c) => c.startsWith('access_token='));
+
+        expect(authCookie).toBeDefined();
+        expect(authCookie).toContain('HttpOnly');
+        expect(authCookie).toContain('SameSite=Lax');
+        expect(authCookie).not.toContain('Secure');
+
+        const cookieValue = authCookie!.split(';')[0].split('=')[1];
+        expect(cookieValue).toBe(res.body.accessToken);
+      });
   });
 
   it('/auth/login - Post - Fail - Wrong pw', async () => {
@@ -131,7 +147,10 @@ describe('AuthenticationController (e2e)', () => {
     return request(app.getHttpServer())
       .post('/v1/auth/login')
       .send(dto)
-      .expect(401);
+      .expect(401)
+      .expect((res) => {
+        expect(res.headers['set-cookie']).toBeUndefined();
+      });
   });
 
   it('/auth/login - Post - Success - Uppercase email', async () => {

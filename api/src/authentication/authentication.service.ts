@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/user/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateTokenHash } from './token';
 import { LoginUserDto } from './dto/user/login-user.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthenticationService {
@@ -18,7 +19,10 @@ export class AuthenticationService {
     '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   private static readonly INVITE_CODE_LENGTH = 8;
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async registerUser(createUserDto: CreateUserDto) {
     // Existing email check
@@ -138,7 +142,7 @@ export class AuthenticationService {
         'User has not verified their email address.',
       );
 
-    return true;
+    return { accessToken: await this.jwtService.signAsync({ sub: user.id }) };
   }
 
   // Private methods
