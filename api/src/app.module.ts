@@ -19,6 +19,9 @@ import { APP_GUARD } from '@nestjs/core';
       isGlobal: true,
       validationSchema: Joi.object({
         DATABASE_URL: Joi.string().required(),
+        NODE_ENV: Joi.string()
+          .valid('development', 'test', 'production')
+          .default('development'),
         JWT_SECRET: Joi.string().required(),
         PORT: Joi.number().default(3000),
       }),

@@ -1,22 +1,17 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Get,
-  Version,
-  Query,
-  HttpCode,
-  Res,
-} from '@nestjs/common';
+import { Body, Controller, Post, Version, HttpCode, Res } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { CreateUserDto } from './dto/user/create-user.dto';
 import { LoginUserDto } from './dto/user/login-user.dto';
 import { minutes, Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Controller({ path: 'auth' })
 export class AuthenticationController {
-  constructor(private readonly authenticationService: AuthenticationService) {}
+  constructor(
+    private readonly authenticationService: AuthenticationService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('register')
   @Version('1')
@@ -39,7 +34,7 @@ export class AuthenticationController {
     res.cookie('access_token', token.accessToken, {
       httpOnly: true,
       sameSite: 'lax',
-      secure: false,
+      secure: this.configService.get('NODE_ENV') === 'production',
       maxAge: minutes(60),
       path: '/',
     });

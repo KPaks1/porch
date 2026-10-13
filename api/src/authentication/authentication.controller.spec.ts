@@ -3,6 +3,7 @@ import { BadRequestException, ConflictException } from '@nestjs/common';
 import { AuthenticationController } from './authentication.controller';
 import { AuthenticationService } from './authentication.service';
 import { CreateUserDto } from './dto/user/create-user.dto';
+import { ConfigService } from '@nestjs/config';
 
 describe('AuthenticationController', () => {
   let controller: AuthenticationController;
@@ -12,12 +13,17 @@ describe('AuthenticationController', () => {
     registerUser: jest.fn(),
   };
 
+  const configService = {
+    registerUser: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthenticationController],
       providers: [
         // Mock services
         { provide: AuthenticationService, useValue: authenticationService },
+        { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 
