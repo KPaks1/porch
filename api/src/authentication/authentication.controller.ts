@@ -12,6 +12,7 @@ export class AuthenticationController {
     return this.authenticationService.registerUser(createUserDto);
   }
 
+  // Here temporarily to confirm functionality
   @Get('user')
   @Version('1')
   async user(@Query('email') email: string) {

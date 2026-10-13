@@ -7,6 +7,7 @@ import {
 import bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/user/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { generateTokenHash } from './token';
 
 @Injectable()
 export class AuthenticationService {
@@ -27,16 +28,59 @@ export class AuthenticationService {
       throw new ConflictException('An account with this email already exists');
     }
 
+    // Generate password hash
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
 
     try {
       const createdUser = await this.prismaService.$transaction(async (tx) => {
+        // Try find active invite code
+        const inviteCode = await tx.userInviteCode.findUnique({
+          where: { code: createUserDto.inviteCode, revokedAt: null },
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+                inviteLimit: true,
+              },
+            },
+          },
+        });
+
+        if (!inviteCode) {
+          throw new BadRequestException('Invalid invite code');
+        }
+
+        // Try increment used invite counter by 1
+        const rows = await tx.user.updateMany({
+          where: {
+            id: inviteCode.user.id,
+            invitesUsed: { lt: tx.user.fields.inviteLimit },
+          },
+          data: { invitesUsed: { increment: 1 } },
+        });
+
+        if (rows.count === 0) {
+          throw new BadRequestException('Invalid invite code');
+        }
+
+        // Create the new user and invite code and return it
         const user = await tx.user.create({
           data: {
             email: createUserDto.email,
             passwordHash: passwordHash,
             displayName: createUserDto.displayName,
-            inviteCodes: { create: { code: this.generateInviteCode() } },
+            inviteCodeId: inviteCode.id,
+            invitedById: inviteCode.user.id,
+            inviteCodes: {
+              create: { code: this.generateInviteCode() },
+            },
+            userVerification: {
+              create: {
+                tokenHash: generateTokenHash(),
+                expiresAt: this.generateTokenExpiryDate(),
+              },
+            },
           },
         });
 
@@ -53,7 +97,8 @@ export class AuthenticationService {
           ? source.sqlState
           : null;
 
-      if (code !== '40001' && code !== '40P01') throw error;
+      if (code !== '40001' && code !== '40P01')
+        throw new BadRequestException(error);
     }
   }
 
@@ -74,7 +119,18 @@ export class AuthenticationService {
     return user;
   }
 
+  async deleteUser(id: number) {
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.user.delete({ where: { id: id } });
+    });
+  }
+
   // Private methods ----------------------
+
+  generateTokenExpiryDate() {
+    // 48 hours
+    return new Date(Date.now() + 48 * 60 * 60 * 1000);
+  }
 
   generateInviteCode() {
     const characters = AuthenticationService.INVITE_CODE_ALPHABET;
