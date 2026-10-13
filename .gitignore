@@ -30,4 +30,4 @@ Thumbs.db
 api/.*
 __azurite_db_table__.json
 AzuriteConfig
-requests/*
+api/requests/*
