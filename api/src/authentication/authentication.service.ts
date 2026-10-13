@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/user/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,14 +18,13 @@ export class AuthenticationService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async registerUser(createUserDto: CreateUserDto) {
-    const inviteCodeIsValid = await this.inviteCodeIsValid(
-      createUserDto.inviteCode,
-    );
-
-    if (!inviteCodeIsValid) {
-      throw new Error(
-        'Invalid invite code or inviter has reached their limit of invites.',
-      );
+    // Existing email check
+    const existing = await this.prismaService.user.findUnique({
+      where: { email: createUserDto.email },
+      select: { id: true },
+    });
+    if (existing) {
+      throw new ConflictException('An account with this email already exists');
     }
 
     const passwordHash = await bcrypt.hash(createUserDto.password, 10);
