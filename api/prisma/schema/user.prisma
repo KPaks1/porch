@@ -12,6 +12,7 @@ model User {
   inviteCode  UserInviteCode?  @relation("CodeUsage", fields: [inviteCodeId], references: [id], onDelete: SetNull)
 
   inviteLimit Int  @default(3)
+  invitesUsed Int  @default(0)
   invitedById Int?
 
   invitedBy User? @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
