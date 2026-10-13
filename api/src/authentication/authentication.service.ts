@@ -82,6 +82,7 @@ export class AuthenticationService {
               },
             },
           },
+          omit: { id: true, invitedById: true, inviteCodeId: true, createdAt: true, updatedAt: true }
         });
 
         return user;
