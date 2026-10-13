@@ -28,3 +28,6 @@ Thumbs.db
 
 *.tsbuildinfo
 api/.*
+__azurite_db_table__.json
+AzuriteConfig
+api/requests/*

@@ -14,7 +14,8 @@ async function main() {
     create: {
       email: "founder@porch.local",
       displayName: "Founder",
-      passwordHash: "hashedpassword"
+      passwordHash: "hashedpassword",
+      inviteLimit: 10000
     },
   });
 

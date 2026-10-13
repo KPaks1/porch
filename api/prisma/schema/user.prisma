@@ -4,7 +4,8 @@ model User {
   passwordHash     String
   displayName      String
   bio              String?
-  userVerification UserVerification?
+  
+  userVerification UserVerification? @relation("UserVerification")
 
   inviteCodeId Int?
 
@@ -12,6 +13,7 @@ model User {
   inviteCode  UserInviteCode?  @relation("CodeUsage", fields: [inviteCodeId], references: [id], onDelete: SetNull)
 
   inviteLimit Int  @default(3)
+  invitesUsed Int  @default(0)
   invitedById Int?
 
   invitedBy User? @relation("UserInvites", fields: [invitedById], references: [id], onDelete: SetNull)
@@ -28,9 +30,8 @@ model User {
 model UserVerification {
   id     Int @id @default(autoincrement())
   userId Int @unique
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+  user User? @relation("UserVerification", fields: [userId], references: [id], onDelete: Cascade)
+  
   tokenHash String @unique
 
   expiresAt  DateTime  @db.Timestamptz(3)
