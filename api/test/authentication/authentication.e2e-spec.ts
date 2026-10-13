@@ -12,7 +12,10 @@ import {
   FOUNDER_EMAIL,
   FOUNDER_DISPLAY_NAME,
   FOUNDER_INVITE_CODE,
+  FOUNDER_PASSWORD_HASH,
+  FOUNDER_PASSWORD_RAW,
 } from '../fixtures/constants';
+import { LoginUserDto } from '../../src/authentication/dto/user/login-user.dto';
 
 describe('AuthenticationController (e2e)', () => {
   let app: INestApplication<App>;
@@ -34,7 +37,7 @@ describe('AuthenticationController (e2e)', () => {
     await createFounder(prisma);
   });
 
-  it('/auth/register - Post - Success', () => {
+  it('/auth/register - Post - Success', async () => {
     const dto: CreateUserDto = {
       email: 'test2@porch.local',
       password: 'a-long-password-123',
@@ -61,7 +64,7 @@ describe('AuthenticationController (e2e)', () => {
       });
   });
 
-  it('/auth/register - Post - Conflict', () => {
+  it('/auth/register - Post - Conflict', async () => {
     const dto: CreateUserDto = {
       email: FOUNDER_EMAIL,
       displayName: FOUNDER_DISPLAY_NAME,
@@ -75,14 +78,16 @@ describe('AuthenticationController (e2e)', () => {
       .expect(409)
       .expect((res) =>
         expect(res.body).toMatchObject({
-          error: 'Conflict',
-          message: 'An account with this email already exists',
-          statusCode: 409,
+          detail: 'An account with this email already exists',
+          instance: '/v1/auth/register',
+          status: 409,
+          title: 'Conflict',
+          type: 'about:blank',
         }),
       );
   });
 
-  it('/auth/register - Post - Bad Request', () => {
+  it('/auth/register - Post - Bad Request', async () => {
     const dto: CreateUserDto = {
       email: 'notarealemail@porch.local',
       displayName: 'Invalid Invite',
@@ -96,9 +101,124 @@ describe('AuthenticationController (e2e)', () => {
       .expect(400)
       .expect((res) =>
         expect(res.body).toMatchObject({
-          message: 'Invalid invite code',
+          detail: 'Invalid invite code',
+          instance: '/v1/auth/register',
+          status: 400,
+          title: 'Bad Request',
+          type: 'about:blank',
         }),
       );
+  });
+
+  it('/auth/login - Post - Success', async () => {
+    const dto: LoginUserDto = {
+      email: FOUNDER_EMAIL,
+      password: FOUNDER_PASSWORD_RAW,
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(200)
+      .expect((res) => {
+        expect(typeof res.body.accessToken).toBe('string');
+
+        const cookies = res.headers['set-cookie'] as unknown as
+          string[] | undefined;
+
+        const authCookie = cookies?.find((c) => c.startsWith('access_token='));
+
+        expect(authCookie).toBeDefined();
+        expect(authCookie).toContain('HttpOnly');
+        expect(authCookie).toContain('SameSite=Lax');
+        expect(authCookie).not.toContain('Secure');
+
+        const cookieValue = authCookie!.split(';')[0].split('=')[1];
+        expect(cookieValue).toBe(res.body.accessToken);
+      });
+  });
+
+  it('/auth/login - Post - Fail - Wrong pw', async () => {
+    const dto: LoginUserDto = {
+      email: FOUNDER_EMAIL,
+      password: 'fakepasswordthatfails',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(401)
+      .expect((res) => {
+        expect(res.headers['set-cookie']).toBeUndefined();
+      });
+  });
+
+  it('/auth/login - Post - Success - Uppercase email', async () => {
+    const dto: LoginUserDto = {
+      email: FOUNDER_EMAIL,
+      password: 'fakepassword',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(401);
+  });
+
+  it('/auth/login - Post - Fail - Valid, but wrong email', async () => {
+    const dto: LoginUserDto = {
+      email: 'fakeemail@thatfa.ils',
+      password: 'fakepasswordthatfails',
+    };
+
+    return request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(401);
+  });
+
+  it('/auth/login - Post - Fail - Invalid email input', async () => {
+    const dto: LoginUserDto = {
+      email: 'fakeemailthatfails',
+      password: 'fakepasswordthatfails',
+    };
+
+    return await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(400)
+      .expect((res) => {
+        expect(res.body).toMatchObject({
+          detail: 'The request is invalid.',
+          instance: '/v1/auth/login',
+          status: 400,
+          title: 'Bad Request',
+          type: 'about:blank',
+        });
+        expect(res.body.errors).toContainEqual({
+          field: 'email',
+          message: 'Please enter a valid email address',
+        });
+      });
+  });
+
+  it('/auth/login - Post - Fail - Blocked by rate limit', async () => {
+    const dto: LoginUserDto = {
+      email: 'fakeemail@porch.local',
+      password: 'invalidpassword',
+    };
+
+    for (let i = 0; i < 5; i++) {
+      await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send(dto)
+        .expect(401);
+    }
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(429);
   });
 
   afterEach(async () => {

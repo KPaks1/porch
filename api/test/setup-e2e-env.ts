@@ -18,7 +18,9 @@ if (!testDatabaseUrl) {
 // Compare with the .env file's value: process.env.DATABASE_URL may already
 // have been overridden in the shell (e.g. to migrate the test database).
 if (envFile.DATABASE_URL && testDatabaseUrl === envFile.DATABASE_URL) {
-  throw new Error('TEST_DATABASE_URL must point at a different database than DATABASE_URL');
+  throw new Error(
+    'TEST_DATABASE_URL must point at a different database than DATABASE_URL',
+  );
 }
 
 process.env.DATABASE_URL = testDatabaseUrl;

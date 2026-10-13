@@ -13,7 +13,7 @@ export class PrismaService
       adapter: new PrismaPg({
         connectionString: configService.getOrThrow<string>('DATABASE_URL'),
       }),
-      omit: { user: { passwordHash: true } }
+      omit: { user: { passwordHash: true } },
     });
   }
 

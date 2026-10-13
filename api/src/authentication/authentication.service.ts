@@ -3,11 +3,14 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/user/create-user.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { generateTokenHash } from './token';
+import { LoginUserDto } from './dto/user/login-user.dto';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthenticationService {
@@ -16,10 +19,15 @@ export class AuthenticationService {
     '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
   private static readonly INVITE_CODE_LENGTH = 8;
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async registerUser(createUserDto: CreateUserDto) {
     // Existing email check
+    createUserDto.email = createUserDto.email.trim().toLowerCase();
+
     const existing = await this.prismaService.user.findUnique({
       where: { email: createUserDto.email },
       select: { id: true },
@@ -82,7 +90,13 @@ export class AuthenticationService {
               },
             },
           },
-          omit: { id: true, invitedById: true, inviteCodeId: true, createdAt: true, updatedAt: true }
+          omit: {
+            id: true,
+            invitedById: true,
+            inviteCodeId: true,
+            createdAt: true,
+            updatedAt: true,
+          },
         });
 
         return user;
@@ -98,33 +112,42 @@ export class AuthenticationService {
           ? source.sqlState
           : null;
 
-      if (code !== '40001' && code !== '40P01')
-        throw new BadRequestException(error);
+      if (code !== '40001' && code !== '40P01') throw error;
     }
   }
 
-  async getUserByEmail(email: string) {
+  async login(loginUserDto: LoginUserDto) {
     const user = await this.prismaService.user.findUnique({
-      where: { email },
+      where: { email: loginUserDto.email },
       select: {
         id: true,
-        email: true,
-        displayName: true,
-        bio: true,
-        createdAt: true,
+        passwordHash: true,
+        userVerification: { select: { verifiedAt: true } },
       },
     });
 
-    if (!user) throw new NotFoundException();
+    if (!user) throw new UnauthorizedException('Invalid email or password.');
 
-    return user;
+    const match = await bcrypt.compare(
+      loginUserDto.password,
+      user.passwordHash,
+    );
+
+    if (!match) throw new UnauthorizedException('Invalid email or password.');
+
+    const verified = user.userVerification?.verifiedAt;
+
+    if (!verified)
+      throw new UnauthorizedException(
+        'User has not verified their email address.',
+      );
+
+    return { accessToken: await this.jwtService.signAsync({ sub: user.id }) };
   }
 
-  // Private methods ----------------------
-
+  // Private methods
   generateTokenExpiryDate() {
-    // 48 hours
-    return new Date(Date.now() + 48 * 60 * 60 * 1000);
+    return new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
   }
 
   generateInviteCode() {
