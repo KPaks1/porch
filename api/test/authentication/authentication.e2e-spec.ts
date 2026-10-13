@@ -78,9 +78,11 @@ describe('AuthenticationController (e2e)', () => {
       .expect(409)
       .expect((res) =>
         expect(res.body).toMatchObject({
-          error: 'Conflict',
-          message: 'An account with this email already exists',
-          statusCode: 409,
+          detail: 'An account with this email already exists',
+          instance: '/v1/auth/register',
+          status: 409,
+          title: 'Conflict',
+          type: 'about:blank',
         }),
       );
   });
@@ -99,7 +101,11 @@ describe('AuthenticationController (e2e)', () => {
       .expect(400)
       .expect((res) =>
         expect(res.body).toMatchObject({
-          message: 'Invalid invite code',
+          detail: 'Invalid invite code',
+          instance: '/v1/auth/register',
+          status: 400,
+          title: 'Bad Request',
+          type: 'about:blank',
         }),
       );
   });
@@ -162,11 +168,19 @@ describe('AuthenticationController (e2e)', () => {
       .post('/v1/auth/login')
       .send(dto)
       .expect(400)
-      .expect((res) =>
-        expect(res.body.message).toContain(
-          'Please enter a valid email address',
-        ),
-      );
+      .expect((res) => {
+        expect(res.body).toMatchObject({
+          detail: 'The request is invalid.',
+          instance: '/v1/auth/login',
+          status: 400,
+          title: 'Bad Request',
+          type: 'about:blank',
+        });
+        expect(res.body.errors).toContainEqual({
+          field: 'email',
+          message: 'Please enter a valid email address',
+        });
+      });
   });
 
   afterEach(async () => {

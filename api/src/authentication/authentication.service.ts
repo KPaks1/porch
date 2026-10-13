@@ -108,8 +108,7 @@ export class AuthenticationService {
           ? source.sqlState
           : null;
 
-      if (code !== '40001' && code !== '40P01')
-        throw new BadRequestException(error);
+      if (code !== '40001' && code !== '40P01') throw error;
     }
   }
 
