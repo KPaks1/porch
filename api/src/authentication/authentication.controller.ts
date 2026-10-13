@@ -18,5 +18,4 @@ export class AuthenticationController {
   async login(@Body() loginUserDto: LoginUserDto) {
     return this.authenticationService.login(loginUserDto);
   }
-  
 }

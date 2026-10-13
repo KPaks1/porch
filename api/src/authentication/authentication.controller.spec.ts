@@ -62,7 +62,9 @@ describe('AuthenticationController', () => {
         new BadRequestException('Invalid invite code'),
       );
 
-      await expect(controller.register(dto)).rejects.toThrow(BadRequestException);
+      await expect(controller.register(dto)).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

@@ -9,7 +9,9 @@ export class LoginUserDto {
     required: true,
   })
   @IsEmail({}, { message: 'Please enter a valid email address' })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   email: string;
 
   @ApiProperty({

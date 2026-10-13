@@ -8,8 +8,10 @@ export class CreateUserDto {
     description: 'The email of the user, you will use this to log in',
     required: true,
   })
-  @IsEmail({}, {message: 'Please enter a valid email address'})
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim().toLowerCase() : value))
+  @IsEmail({}, { message: 'Please enter a valid email address' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   email: string;
 
   @ApiProperty({
@@ -18,7 +20,7 @@ export class CreateUserDto {
     required: true,
   })
   @IsString()
-  @Length(12, 72, {message: 'Password must be between 12 and 72 characters'})
+  @Length(12, 72, { message: 'Password must be between 12 and 72 characters' })
   password: string;
 
   @ApiProperty({
@@ -27,7 +29,9 @@ export class CreateUserDto {
     required: true,
   })
   @IsString()
-  @Length(4, 50, {message: 'Display name must be between 4 and 50 characters'})
+  @Length(4, 50, {
+    message: 'Display name must be between 4 and 50 characters',
+  })
   displayName: string;
 
   @ApiProperty({

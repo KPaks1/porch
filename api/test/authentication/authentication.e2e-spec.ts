@@ -163,7 +163,9 @@ describe('AuthenticationController (e2e)', () => {
       .send(dto)
       .expect(400)
       .expect((res) =>
-        expect(res.body.message).toContain('Please enter a valid email address'),
+        expect(res.body.message).toContain(
+          'Please enter a valid email address',
+        ),
       );
   });
 
