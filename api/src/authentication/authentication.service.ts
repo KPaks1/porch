@@ -120,12 +120,6 @@ export class AuthenticationService {
     return user;
   }
 
-  async deleteUser(id: number) {
-    await this.prismaService.$transaction(async (tx) => {
-      await tx.user.delete({ where: { id: id } });
-    });
-  }
-
   // Private methods ----------------------
 
   generateTokenExpiryDate() {
@@ -144,35 +138,5 @@ export class AuthenticationService {
     }
 
     return inviteCode;
-  }
-
-  async inviteCodeIsValid(inviteCode: string) {
-    const inviter = await this.prismaService.userInviteCode.findUnique({
-      where: {
-        code: inviteCode,
-        revokedAt: null,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            inviteLimit: true,
-            _count: {
-              select: { invitees: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!inviter) {
-      return false;
-    } else {
-      if (inviter.user._count.invitees >= inviter.user.inviteLimit) {
-        return false;
-      }
-    }
-
-    return true;
   }
 }
