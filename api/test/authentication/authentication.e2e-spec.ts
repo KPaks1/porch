@@ -37,7 +37,7 @@ describe('AuthenticationController (e2e)', () => {
     await createFounder(prisma);
   });
 
-  it('/auth/register - Post - Success', () => {
+  it('/auth/register - Post - Success', async () => {
     const dto: CreateUserDto = {
       email: 'test2@porch.local',
       password: 'a-long-password-123',
@@ -64,7 +64,7 @@ describe('AuthenticationController (e2e)', () => {
       });
   });
 
-  it('/auth/register - Post - Conflict', () => {
+  it('/auth/register - Post - Conflict', async () => {
     const dto: CreateUserDto = {
       email: FOUNDER_EMAIL,
       displayName: FOUNDER_DISPLAY_NAME,
@@ -87,7 +87,7 @@ describe('AuthenticationController (e2e)', () => {
       );
   });
 
-  it('/auth/register - Post - Bad Request', () => {
+  it('/auth/register - Post - Bad Request', async () => {
     const dto: CreateUserDto = {
       email: 'notarealemail@porch.local',
       displayName: 'Invalid Invite',
@@ -110,7 +110,7 @@ describe('AuthenticationController (e2e)', () => {
       );
   });
 
-  it('/auth/login - Post - Success', () => {
+  it('/auth/login - Post - Success', async () => {
     const dto: LoginUserDto = {
       email: FOUNDER_EMAIL,
       password: FOUNDER_PASSWORD_RAW,
@@ -122,7 +122,7 @@ describe('AuthenticationController (e2e)', () => {
       .expect(201);
   });
 
-  it('/auth/login - Post - Fail - Wrong pw', () => {
+  it('/auth/login - Post - Fail - Wrong pw', async () => {
     const dto: LoginUserDto = {
       email: FOUNDER_EMAIL,
       password: 'fakepasswordthatfails',
@@ -134,7 +134,7 @@ describe('AuthenticationController (e2e)', () => {
       .expect(401);
   });
 
-  it('/auth/login - Post - Success - Uppercase email', () => {
+  it('/auth/login - Post - Success - Uppercase email', async () => {
     const dto: LoginUserDto = {
       email: FOUNDER_EMAIL,
       password: 'fakepassword',
@@ -146,7 +146,7 @@ describe('AuthenticationController (e2e)', () => {
       .expect(401);
   });
 
-  it('/auth/login - Post - Fail - Valid, but wrong email', () => {
+  it('/auth/login - Post - Fail - Valid, but wrong email', async () => {
     const dto: LoginUserDto = {
       email: 'fakeemail@thatfa.ils',
       password: 'fakepasswordthatfails',
@@ -158,13 +158,13 @@ describe('AuthenticationController (e2e)', () => {
       .expect(401);
   });
 
-  it('/auth/login - Post - Fail - Invalid email input', () => {
+  it('/auth/login - Post - Fail - Invalid email input', async () => {
     const dto: LoginUserDto = {
       email: 'fakeemailthatfails',
       password: 'fakepasswordthatfails',
     };
 
-    return request(app.getHttpServer())
+    return await request(app.getHttpServer())
       .post('/v1/auth/login')
       .send(dto)
       .expect(400)
@@ -181,6 +181,25 @@ describe('AuthenticationController (e2e)', () => {
           message: 'Please enter a valid email address',
         });
       });
+  });
+
+  it('/auth/login - Post - Fail - Blocked by rate limit', async () => {
+    const dto: LoginUserDto = {
+      email: 'fakeemail@porch.local',
+      password: 'invalidpassword',
+    };
+
+    for (let i = 0; i < 5; i++) {
+      await request(app.getHttpServer())
+        .post('/v1/auth/login')
+        .send(dto)
+        .expect(401);
+    }
+
+    await request(app.getHttpServer())
+      .post('/v1/auth/login')
+      .send(dto)
+      .expect(429);
   });
 
   afterEach(async () => {

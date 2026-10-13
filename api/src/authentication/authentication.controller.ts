@@ -2,6 +2,7 @@ import { Body, Controller, Post, Get, Version, Query } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { CreateUserDto } from './dto/user/create-user.dto';
 import { LoginUserDto } from './dto/user/login-user.dto';
+import { minutes, Throttle } from '@nestjs/throttler';
 
 @Controller({ path: 'auth' })
 export class AuthenticationController {
@@ -15,6 +16,9 @@ export class AuthenticationController {
 
   @Post('login')
   @Version('1')
+  @Throttle({
+    default: { limit: 5, ttl: minutes(1) },
+  })
   async login(@Body() loginUserDto: LoginUserDto) {
     return this.authenticationService.login(loginUserDto);
   }
