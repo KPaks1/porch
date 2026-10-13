@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Version } from '@nestjs/common';
+import { Body, Controller, Post, Get, Version, Query } from '@nestjs/common';
 import { AuthenticationService } from './authentication.service';
 import { CreateUserDto } from './dto/user/create-user.dto';
 
@@ -8,7 +8,13 @@ export class AuthenticationController {
 
   @Post('register')
   @Version('1')
-  register(@Body() createUserDto: CreateUserDto) {
+  async register(@Body() createUserDto: CreateUserDto) {
     return this.authenticationService.registerUser(createUserDto);
+  }
+
+  @Get('user')
+  @Version('1')
+  async user(@Query('email') email: string) {
+    return this.authenticationService.getUserByEmail(email);
   }
 }

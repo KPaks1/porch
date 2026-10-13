@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
-import { HealthController } from './health/health.controller';
-import { HealthService } from './health/health.service';
-import { AuthenticationController } from './authentication/authentication.controller';
-import { AuthenticationService } from './authentication/authentication.service';
-import { PrismaService } from './prisma/prisma.service';
+import { HealthModule } from './health/health.module';
+import { AuthenticationModule } from './authentication/authentication.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [
@@ -17,8 +15,9 @@ import { PrismaService } from './prisma/prisma.service';
         PORT: Joi.number().default(3000),
       }),
     }),
+    PrismaModule,
+    HealthModule,
+    AuthenticationModule,
   ],
-  controllers: [HealthController, AuthenticationController],
-  providers: [HealthService, AuthenticationService, PrismaService],
 })
 export class AppModule {}
